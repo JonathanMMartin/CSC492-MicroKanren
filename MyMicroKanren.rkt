@@ -7,7 +7,8 @@
          walk
          ext-s
          ext-s-lst
-         unify)
+         unify
+         ===)
 
 
 #|
@@ -78,17 +79,26 @@ If at least one is unbound, then it is bound to the other in a new state, the ne
 If both terms are pairs, then cars and cdrs will attempt to unfiy recursively.
 If the terms are unable to be unified then #f is returned.
 |#
-(define (unify u v s)
-  (let* ([u2 (walk u s)]
-         [v2 (walk v s)])
-    (cond
-      [(and (var? u2) (var? v2) (var=? u2 v2)) s]
-      [(var? u2) (ext-s u2 v2 s)]
-      [(var? v2) (ext-s v2 u2 s)]
-      [(and (pair? u2) (pair? v2)) (let ([s2 (unify (car u2) (car v2) s)])
-                                     (if s2
-                                         (unify (cdr u2) (cdr v2) s2)
-                                         #f))]
-      [(eq? u2 v2) s]
-      [else #f])))
+(define/match (unify u v s)
+  [(_ _ #f) #f]
+  [(u v s) (let* ([u2 (walk u s)]
+                  [v2 (walk v s)])
+             (cond
+               [(and (var? u2) (var? v2) (var=? u2 v2)) s]
+               [(var? u2) (ext-s u2 v2 s)]
+               [(var? v2) (ext-s v2 u2 s)]
+               [(and (pair? u2) (pair? v2)) (unify (cdr u2) (cdr v2) (unify (car u2) (car v2) s))]
+               [(eq? u2 v2) s]
+               [else #f]))])
+
+#|
+(=== u v) -> 
+  u: a term
+  v: a term
+
+Takes in two terms, and returns a goal (function) that takes in a state and will succeed if the terms unify in the given state
+|#
+(define (=== u v)
+  (lambda (s) (let ([s2 (unify u v s)])
+                (if s2 s2 '()))))
             

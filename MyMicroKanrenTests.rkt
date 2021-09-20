@@ -112,5 +112,19 @@
                       [v (var 3)]
                       [v1 (var 4)]
                       [v2 (var 5)])
-                 (ext-s-lst (list u v u1 u2) (list (cons u1 u2) (cons v1 v2) v1 v2) empty-state))))
+                 (ext-s-lst (list u v u1 u2) (list (cons u1 u2) (cons v1 v2) v1 v2) empty-state)))
+  ; === tests
+  (test-equal? "=== failure 0"
+               ((=== 0 1) empty-state)
+               '())
+  (test-equal? "=== failure 1"
+               ((=== (var 0) 1) (ext-s (var 0) 200 empty-state))
+               '())
+  (test-equal? "=== failure 2"
+               ((=== (var 0) (var 1)) (ext-s-lst (list (var 0) (var 1)) (list 87 33) empty-state))
+               '())
+  (test-equal? "=== sucess with x = 1"
+               ((=== (var 0) 39) empty-state)
+               (ext-s (var 0) 39 empty-state))
+  )
                  
