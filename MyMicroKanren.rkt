@@ -3,13 +3,11 @@
 (provide var
          var?
          var=?
-         empty-state
          walk
          ext-s
-         ext-s-lst
          unify
-         ===)
-
+         ===
+         call/fresh)
 
 #|
 Define logic variables using vectors. They should be vectors of a single elemenmt. That element should be an int
@@ -18,18 +16,16 @@ Define logic variables using vectors. They should be vectors of a single elemenm
 (define (var? c) (vector? c))
 (define (var=? x y) (= (vector-ref x 0) (vector-ref y 0)))
 
-(define empty-state (cons '() 0))
-
 #|
 (walk u s) -> any?
   u: a logic variable
-  s: a subsition mapping/state
+  s: a substitution mapping
 
 Takes in a logic variable and a mapping an returns what that logic variable is mapped to
 |#
 (define (walk u s)
   (if (var? u)
-      (let ([w (assf (lambda (v) (var=? u v)) (car s))])
+      (let ([w (assf (lambda (v) (var=? u v)) s)])
         (if w
             (walk (cdr w) s)
             u))
@@ -39,39 +35,17 @@ Takes in a logic variable and a mapping an returns what that logic variable is m
 (ext-s v x s) -> pair?
   v: a logic variable
   x: a term
-  s: a subsition mapping/state
+  s: a substitution mapping
 
 Takes in a logic variable, a term and a state and returns a state which has the new variable binding added to it
 |#
-(define (ext-s v x s)
-  (let* ([lst (car s)]
-         [n (cdr s)]
-         [b (cons v x)])
-    (cons (cons b lst) (+ n 1))))
-
-#|
-(ext-s-lst vs xs s) -> pair?
-  vs: a list of logic variables
-  xs: a list of terms
-  s: a subsitition mapping/state
-
-Takes in a list of logic variables, and a list of terms, and a state and returns a state which has new variable bindings with
-the first variable mapped to the first term, the second variable mapped to the second term and so on.
-
-Assumes that the two lists are of equal length
-
-This is mostly to make writing test cases easier, use with caution.
-
-|#
-(define/match (ext-s-lst vs xs s)
-  [('() '() s) s]
-  [((cons v vs) (cons x xs) s) (ext-s-lst vs xs (ext-s v x s))])
+(define (ext-s v x s) (cons (cons v x) s))
 
 #|
 (unify u v s) -> pair?/bool
   u: a logic variable
   v: a logic variable
-  s: a subsitution mapping/state
+  s: a subsitution mapping
 
 Takes in a pair of logic variables and a state, and attempts to unify the logic variables in the state.
 If they are already equivlent in the state, then the original state is returned.
@@ -99,6 +73,16 @@ If the terms are unable to be unified then #f is returned.
 Takes in two terms, and returns a goal (function) that takes in a state and will succeed if the terms unify in the given state
 |#
 (define (=== u v)
-  (lambda (s) (let ([s2 (unify u v s)])
-                (if s2 s2 '()))))
+  (lambda (s/c) (let ([s2 (unify u v (car s/c))])
+                (if s2 (cons s2 (cdr s/c)) '()))))
+
+#|
+(call/fresh f) ->
+  f: a function, whose body is a goal
+
+Used to create a new ("fresh") logic variable, that satisfies the goal of the body of f, if possible.
+
+|#
+(define (call/fresh f)
+  (lambda (s/c) ((f (var (cdr s/c))) (cons (car s/c) (+ (cdr s/c) 1)))))
             
