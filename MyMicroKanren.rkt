@@ -1,8 +1,14 @@
 #lang racket
 
-(module+ test
-  ; Import the testing library
-  (require rackunit))
+(provide var
+         var?
+         var=?
+         empty-state
+         walk
+         ext-s
+         ext-s-lst
+         unify)
+
 
 #|
 Define logic variables using vectors. They should be vectors of a single elemenmt. That element should be an int
@@ -42,49 +48,47 @@ Takes in a logic variable, a term and a state and returns a state which has the 
          [b (cons v x)])
     (cons (cons b lst) (+ n 1))))
 
+#|
+(ext-s-lst vs xs s) -> pair?
+  vs: a list of logic variables
+  xs: a list of terms
+  s: a subsitition mapping/state
 
+Takes in a list of logic variables, and a list of terms, and a state and returns a state which has new variable bindings with
+the first variable mapped to the first term, the second variable mapped to the second term and so on.
 
+Assumes that the two lists are of equal length
 
-(module+ test
-  (test-equal? "var=? 1"
-               (let* ([x (var 0)]
-                      [y (var 1)])
-                 (var=? x y))
-               #f)
-  (test-equal? "var=? 2"
-               (let* ([x (var 0)]
-                      [y (var 0)])
-                 (var=? x y))
-               #t)
-  (test-equal? "walk 0"
-               (walk 5 empty-state)
-               5)
-  (test-equal? "walk 1"
-               (let* ([u (var 0)]
-                      [s (cons (list (cons (var 0) 64)) 1)])
-                 (walk u s))
-               64)
-  (test-equal? "walk 2"
-               (let* ([u (var 0)]
-                      [s (cons (list (cons (var 0) (var 1)) (cons (var 1) 12)) 2)])
-                 (walk u s))
-               12)
-  (test-equal? "walk unbound variable"
-               (let* ([u (var 0)])
-                 (walk u empty-state))
-               (var 0))
-  (test-equal? "ext-s 1"
-               (let* ([u (var 0)]
-                      [t 8]
-                      [s empty-state])
-                 (ext-s u t s))
-               (cons (list (cons (var 0) 8)) 1))
-  (test-equal? "ext-s 2"
-               (let* ([u (var 0)]
-                      [v (var 1)]
-                      [t 97]
-                      [m 43])
-                 (ext-s v m (ext-s u t empty-state)))
-               (cons (list (cons (var 1) 43) (cons (var 0) 97)) 2)))
+This is mostly to make writing test cases easier, use with caution.
 
-; From this point forward, we will assume that ext-s works, for use it to make writting test cases a little easier.
+|#
+(define/match (ext-s-lst vs xs s)
+  [('() '() s) s]
+  [((cons v vs) (cons x xs) s) (ext-s-lst vs xs (ext-s v x s))])
+
+#|
+(unify u v s) -> pair?/bool
+  u: a logic variable
+  v: a logic variable
+  s: a subsitution mapping/state
+
+Takes in a pair of logic variables and a state, and attempts to unify the logic variables in the state.
+If they are already equivlent in the state, then the original state is returned.
+If at least one is unbound, then it is bound to the other in a new state, the new state is returned.
+If both terms are pairs, then cars and cdrs will attempt to unfiy recursively.
+If the terms are unable to be unified then #f is returned.
+|#
+(define (unify u v s)
+  (let* ([u2 (walk u s)]
+         [v2 (walk v s)])
+    (cond
+      [(and (var? u2) (var? v2) (var=? u2 v2)) s]
+      [(var? u2) (ext-s u2 v2 s)]
+      [(var? v2) (ext-s v2 u2 s)]
+      [(and (pair? u2) (pair? v2)) (let ([s2 (unify (car u2) (car v2) s)])
+                                     (if s2
+                                         (unify (cdr u2) (cdr v2) s2)
+                                         #f))]
+      [(eq? u2 v2) s]
+      [else #f])))
+            
