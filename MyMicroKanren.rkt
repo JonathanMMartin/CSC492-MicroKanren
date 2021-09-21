@@ -23,7 +23,7 @@ Define logic variables using vectors. They should be vectors of a single elemenm
   u: a logic variable
   s: a substitution mapping
 
-Takes in a logic variable and a mapping an returns what that logic variable is mapped to
+Takes in a logic variable and a mapping an returns what that logic variable is mapped to, if anything
 |#
 (define (walk u s)
   (if (var? u)
@@ -34,12 +34,12 @@ Takes in a logic variable and a mapping an returns what that logic variable is m
       u))
 
 #|
-(ext-s v x s) -> pair?
+(ext-s v x s) -> substitution mapping?
   v: a logic variable
   x: a term
   s: a substitution mapping
 
-Takes in a logic variable, a term and a state and returns a state which has the new variable binding added to it
+Takes in a logic variable, a term and a subsitution and returns a subsitution which has the new variable binding added to it
 |#
 (define (ext-s v x s) (cons (cons v x) s))
 
@@ -49,8 +49,8 @@ Takes in a logic variable, a term and a state and returns a state which has the 
   v: a logic variable
   s: a subsitution mapping
 
-Takes in a pair of logic variables and a state, and attempts to unify the logic variables in the state.
-If they are already equivlent in the state, then the original state is returned.
+Takes in a pair of logic variables and a subsitution, and attempts to unify the logic variables in the state.
+If they are already equivlent in the subsitution mapping, then the original subsitution mapping is returned.
 If at least one is unbound, then it is bound to the other in a new state, the new state is returned.
 If both terms are pairs, then cars and cdrs will attempt to unfiy recursively.
 If the terms are unable to be unified then #f is returned.
@@ -68,7 +68,7 @@ If the terms are unable to be unified then #f is returned.
                [else #f]))])
 
 #|
-(=== u v) -> 
+(=== u v) -> goal
   u: a term
   v: a term
 
@@ -79,7 +79,7 @@ Takes in two terms, and returns a goal (function) that takes in a state and will
                 (if s2 (list (cons s2 (cdr s/c))) '()))))
 
 #|
-(call/fresh f) ->
+(call/fresh f) -> goal
   f: a function, whose body is a goal
 
 Used to create a new ("fresh") logic variable, that satisfies the goal of the body of f, if possible.

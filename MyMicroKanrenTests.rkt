@@ -174,5 +174,17 @@ This is mostly to make writing test cases easier, use with caution.
                  (call/fresh (lambda (a) (=== a 17)))
                  (call/fresh (lambda (b) (=== b 72)))) empty-state)
                (list (cons (ext-s-lst (list (var 0) (var 1)) (list 17 72) empty-subsitution) 2)))
+  (test-equal? "conj 1"
+               ((call/fresh (lambda (a)
+                              (conj (=== a 9) (=== a 4)))) empty-state)
+               '())
+  ; conj and disj test
+  (test-equal? "conj and disj"
+               ((conj
+                 (call/fresh (lambda (a) (=== a 90)))
+                 (call/fresh (lambda (b) (disj (=== b 55) (=== b 720))))) empty-state)
+               (list (cons (ext-s-lst (list (var 0) (var 1)) (list 90 55) empty-subsitution) 2)
+                     (cons (ext-s-lst (list (var 0) (var 1)) (list 90 720) empty-subsitution) 2)))
+
   )
                  
