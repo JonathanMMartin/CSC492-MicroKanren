@@ -142,25 +142,37 @@ This is mostly to make writing test cases easier, use with caution.
                '())
   (test-equal? "=== success with x = 1"
                ((=== (var 0) 39) (cons empty-subsitution 1)) ;(var 0) is created before the relation is run it just isn't bound to anything hence why the variable count is 1
-               (cons (ext-s (var 0) 39 empty-subsitution) 1))
+               (list (cons (ext-s (var 0) 39 empty-subsitution) 1)))
   (test-equal? "=== success with x = y"
                ((=== (var 0) (var 1)) (cons empty-subsitution 2))
-               (cons (ext-s (var 0) (var 1) empty-subsitution) 2))
+               (list (cons (ext-s (var 0) (var 1) empty-subsitution) 2)))
   (test-equal? "=== sucess with (x, y) = (#t, x)"
                ((=== (cons (var 0) (var 1)) (cons #t (var 0))) (cons empty-subsitution 2))
-               (cons (ext-s-lst (list (var 0) (var 1)) (list #t #t) empty-subsitution) 2))
+               (list (cons (ext-s-lst (list (var 0) (var 1)) (list #t #t) empty-subsitution) 2)))
   (test-equal? "=== failure with (x, #f) =/= (#t, x)"
                ((=== (cons (var 0) #f) (cons #t (var 0))) (cons empty-subsitution 1))
                '())
   (test-equal? "=== sucess with x = (y, 4)"
                ((=== (var 0) (cons (var 1) 4)) (cons empty-subsitution 2))
-               (cons (ext-s (var 0) (cons (var 1) 4) empty-subsitution) 2))
+               (list (cons (ext-s (var 0) (cons (var 1) 4) empty-subsitution) 2)))
   ; call/freah tests
   (test-equal? "call/fresh 0"
                ((call/fresh (lambda (x) (=== x x))) empty-state)
-               (cons empty-subsitution 1))
+               (list (cons empty-subsitution 1)))
   (test-equal? "call/fresh 1"
                ((call/fresh (lambda (x) (=== x 1))) empty-state)
-               (cons (ext-s (var 0) 1 empty-subsitution) 1))
+               (list (cons (ext-s (var 0) 1 empty-subsitution) 1)))
+  ; disj tests
+  (test-equal? "disj 0"
+               ((disj
+                 (call/fresh (lambda (a) (=== a 7)))
+                 (call/fresh (lambda (b) (=== b 6)))) empty-state)
+               (list (cons (ext-s (var 0) 7 empty-subsitution) 1) (cons (ext-s (var 0) 6 empty-subsitution) 1)))
+  ; conj tests
+  (test-equal? "conj 0"
+               ((conj
+                 (call/fresh (lambda (a) (=== a 17)))
+                 (call/fresh (lambda (b) (=== b 72)))) empty-state)
+               (list (cons (ext-s-lst (list (var 0) (var 1)) (list 17 72) empty-subsitution) 2)))
   )
                  

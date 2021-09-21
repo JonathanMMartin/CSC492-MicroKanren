@@ -7,7 +7,9 @@
          ext-s
          unify
          ===
-         call/fresh)
+         call/fresh
+         disj
+         conj)
 
 #|
 Define logic variables using vectors. They should be vectors of a single elemenmt. That element should be an int
@@ -74,7 +76,7 @@ Takes in two terms, and returns a goal (function) that takes in a state and will
 |#
 (define (=== u v)
   (lambda (s/c) (let ([s2 (unify u v (car s/c))])
-                (if s2 (cons s2 (cdr s/c)) '()))))
+                (if s2 (list (cons s2 (cdr s/c))) '()))))
 
 #|
 (call/fresh f) ->
@@ -85,4 +87,48 @@ Used to create a new ("fresh") logic variable, that satisfies the goal of the bo
 |#
 (define (call/fresh f)
   (lambda (s/c) ((f (var (cdr s/c))) (cons (car s/c) (+ (cdr s/c) 1)))))
+
+#|
+(disj g1 g2) -> goal
+  g1: a goal
+  g2: a goal
+
+returns a goal that represents g1 or g2
+|#
+(define (disj g1 g2) (lambda (s/c) (mplus (g1 s/c) (g2 s/c))))
+
+
+#|
+(conj g1 g2) -> goal
+  g1: a goal
+  g2: a goal
+
+returns a goal that represents g1 and g2
+|#
+(define (conj g1 g2) (lambda (s/c) (bind (g1 s/c) g2)))
+
+
+#|
+(mplus st1 st2) -> stream
+  st1: a stream
+  st2: a stream
+
+appends st2 to st1
+|#
+(define (mplus st1 st2)
+  (if (null? st1)
+      st2
+      (cons (car st1) (mplus st2 (cdr st1)))))
+
+#|
+(bind st g) -> stream
+  st1: a stream
+  g: a goal
+
+returns a stream containing all states in st that satisfy the goal g 
+|#
+(define (bind st g)
+  (if (null? st)
+      '()
+      (mplus (g (car st)) (bind (cdr st) g))))
             
