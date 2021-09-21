@@ -26,12 +26,11 @@ Define logic variables using vectors. They should be vectors of a single elemenm
 Takes in a logic variable and a mapping an returns what that logic variable is mapped to, if anything
 |#
 (define (walk u s)
-  (if (var? u)
-      (let ([w (assf (lambda (v) (var=? u v)) s)])
-        (if w
-            (walk (cdr w) s)
-            u))
-      u))
+  (cond [(var? u) (let ([w (assf (lambda (v) (var=? u v)) s)])
+                    (if w
+                        (walk (cdr w) s)
+                        u))]
+        [else u]))
 
 #|
 (ext-s v x s) -> substitution mapping?
@@ -116,9 +115,10 @@ returns a goal that represents g1 and g2
 appends st2 to st1
 |#
 (define (mplus st1 st2)
-  (if (null? st1)
-      st2
-      (cons (car st1) (mplus st2 (cdr st1)))))
+  (cond
+    [(null? st1) st2]
+    [(procedure? st1) (lambda () (mplus (st2) st1))]
+    [else (cons (car st1) (mplus st2 (cdr st1)))]))
 
 #|
 (bind st g) -> stream
@@ -128,7 +128,8 @@ appends st2 to st1
 returns a stream containing all states in st that satisfy the goal g 
 |#
 (define (bind st g)
-  (if (null? st)
-      '()
-      (mplus (g (car st)) (bind (cdr st) g))))
+  (cond
+    [(null? st) '()]
+    [(procedure? st) (lambda () (bind (st) g))]
+    [else (mplus (g (car st)) (bind (cdr st) g))]))
             
