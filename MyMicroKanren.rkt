@@ -40,7 +40,10 @@ Takes in a logic variable and a mapping an returns what that logic variable is m
 
 Takes in a logic variable, a term and a subsitution and returns a subsitution which has the new variable binding added to it
 |#
-(define (ext-s v x s) (cons (cons v x) s))
+(define (ext-s v x s)
+  (if (occurs v x s)
+      #f
+      (cons (cons v x) s)))
 
 #|
 (occurs x v s) -> boolean
