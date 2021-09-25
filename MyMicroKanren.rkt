@@ -18,6 +18,9 @@ Define logic variables using vectors. They should be vectors of a single elemenm
 (define (var? c) (vector? c))
 (define (var=? x y) (= (vector-ref x 0) (vector-ref y 0)))
 
+(define (unit s/c) (cons s/c mzero))
+(define mzero '())
+
 #|
 (walk u s) -> any?
   u: a logic variable
@@ -26,11 +29,8 @@ Define logic variables using vectors. They should be vectors of a single elemenm
 Takes in a logic variable and a mapping an returns what that logic variable is mapped to, if anything
 |#
 (define (walk u s)
-  (cond [(var? u) (let ([w (assf (lambda (v) (var=? u v)) s)])
-                    (if w
-                        (walk (cdr w) s)
-                        u))]
-        [else u]))
+  (let ([pr (and (var? u) (assf (lambda (v) (var=? u v)) s))])
+    (if pr (walk (cdr pr) s) u)))
 
 #|
 (ext-s v x s) -> substitution mapping?
@@ -54,17 +54,16 @@ If at least one is unbound, then it is bound to the other in a new state, the ne
 If both terms are pairs, then cars and cdrs will attempt to unfiy recursively.
 If the terms are unable to be unified then #f is returned.
 |#
-(define/match (unify u v s)
-  [(_ _ #f) #f]
-  [(u v s) (let* ([u2 (walk u s)]
-                  [v2 (walk v s)])
-             (cond
-               [(and (var? u2) (var? v2) (var=? u2 v2)) s]
-               [(var? u2) (ext-s u2 v2 s)]
-               [(var? v2) (ext-s v2 u2 s)]
-               [(and (pair? u2) (pair? v2)) (unify (cdr u2) (cdr v2) (unify (car u2) (car v2) s))]
-               [(eq? u2 v2) s]
-               [else #f]))])
+(define (unify u v s)
+  (let* ([u2 (walk u s)]
+         [v2 (walk v s)])
+    (cond
+      [(and (var? u2) (var? v2) (var=? u2 v2)) s]
+      [(var? u2) (ext-s u2 v2 s)]
+      [(var? v2) (ext-s v2 u2 s)]
+      [(and (pair? u2) (pair? v2)) (let ([s2 (unify (car u2) (car v2) s)])
+                                     (and s2 (unify (cdr u2) (cdr v2) s2)))]
+      [else (and (eqv? u2 v2) s)])))
 
 #|
 (=== u v) -> goal
@@ -74,8 +73,9 @@ If the terms are unable to be unified then #f is returned.
 Takes in two terms, and returns a goal (function) that takes in a state and will succeed if the terms unify in the given state
 |#
 (define (=== u v)
-  (lambda (s/c) (let ([s2 (unify u v (car s/c))])
-                (if s2 (list (cons s2 (cdr s/c))) '()))))
+  (lambda (s/c)
+    (let ([s2 (unify u v (car s/c))])
+      (if s2 (unit (cons s2 (cdr s/c))) mzero))))
 
 #|
 (call/fresh f) -> goal
@@ -85,7 +85,8 @@ Used to create a new ("fresh") logic variable, that satisfies the goal of the bo
 
 |#
 (define (call/fresh f)
-  (lambda (s/c) ((f (var (cdr s/c))) (cons (car s/c) (+ (cdr s/c) 1)))))
+  (lambda (s/c)
+    ((f (var (cdr s/c))) (cons (car s/c) (+ (cdr s/c) 1)))))
 
 #|
 (disj g1 g2) -> goal
@@ -117,7 +118,7 @@ appends st2 to st1
 (define (mplus st1 st2)
   (cond
     [(null? st1) st2]
-    [(procedure? st1) (lambda () (mplus (st2) st1))]
+    [(procedure? st1) (lambda () (mplus st2 (st1)))]
     [else (cons (car st1) (mplus st2 (cdr st1)))]))
 
 #|

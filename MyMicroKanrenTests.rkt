@@ -187,4 +187,12 @@ This is mostly to make writing test cases easier, use with caution.
                      (cons (ext-s-lst (list (var 0) (var 1)) (list 90 720) empty-subsitution) 2)))
 
   )
-                 
+
+(define (fives x)
+  (disj (=== x 5) (lambda (s/c) (lambda () ((fives x) s/c)))))
+
+(define (sixes x)
+  (disj (=== x 6) (lambda (s/c) (lambda () ((sixes x) s/c)))))
+
+(define fives-and-sixes
+  (call/fresh (lambda (x) (disj (fives x) (sixes x)))))
