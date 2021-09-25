@@ -5,6 +5,7 @@
          var=?
          walk
          ext-s
+         occurs
          unify
          ===
          call/fresh
@@ -40,6 +41,21 @@ Takes in a logic variable and a mapping an returns what that logic variable is m
 Takes in a logic variable, a term and a subsitution and returns a subsitution which has the new variable binding added to it
 |#
 (define (ext-s v x s) (cons (cons v x) s))
+
+#|
+(occurs x v s) -> boolean
+  x: a logic variable
+  v: a logic variable
+  s: a subsitution mapping
+
+Checks if the logic variable v maps to the logic varible x, or if it maps to something that does map to x, etc. in the provided subsitution mapping
+|#
+(define (occurs x v s)
+  (let ([v2 (walk v s)])
+    (cond [(var? v2) (var=? v2 x)]
+          [(pair? v2) (or (occurs x (car v2) s)
+                          (occurs x (cdr v2) s))]
+          [else #f])))
 
 #|
 (unify u v s) -> pair?/bool

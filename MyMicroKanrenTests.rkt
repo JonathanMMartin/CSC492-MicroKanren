@@ -72,6 +72,25 @@ This is mostly to make writing test cases easier, use with caution.
                (ext-s-lst (list (var 0) (var 1) (var 2)) (list 21 (var 0) (var 1)) empty-sub)
                (ext-s (var 2) (var 1) (ext-s (var 1) (var 0) (ext-s (var 0) 21 empty-sub))))
 ; From this point forward, we will assume that ext-s-lst works, to make writing test cases a little easier.
+  ; occurs tests
+  (test-equal? "occurs in the empty subsitution = #f"
+               (occurs (var 0) (var 1) empty-sub)
+               #f)
+  (test-equal? "occurs var 0 -> var 1, then var 0 does not occur in var 1"
+               (occurs (var 0) (var 1) (ext-s (var 0) (var 1) empty-sub))
+               #f)
+  (test-equal? "occurs var 1 -> var 0, then var 0 does occur in var 1"
+               (occurs (var 0) (var 1) (ext-s (var 1) (var 0) empty-sub))
+               #t)
+  (test-equal? "occurs var 0 -> (non var value), then var 0 does not occur in anything"
+               (occurs (var 0) (var 2) (ext-s-lst (list (var 0) (var 1) (var 2)) (list 3 (var 0) (var 1)) empty-sub))
+               #f)
+  (test-equal? "occurs var 2 -> var 1 -> var 0, then var 0 occurs in var 2"
+               (occurs (var 0) (var 2) (ext-s-lst (list (var 1) (var 2)) (list (var 0) (var 1)) empty-sub))
+               #t)
+  (test-equal? "occurs var 2 -> (cons (var 1) (var 0)), var 0 -> var 3, then var 3 occurs in var 2"
+               (occurs (var 3) (var 2) (ext-s-lst (list (var 0) (var 2)) (list (var 3) (list (var 1) (var 0))) empty-sub))
+               #t)
   ; walk tests
   (test-equal? "walk 0"
                (walk 5 empty-sub)
