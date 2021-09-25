@@ -155,6 +155,9 @@ This is mostly to make writing test cases easier, use with caution.
   (test-equal? "=== sucess with x = (y, 4)"
                ((=== (var 0) (cons (var 1) 4)) (cons empty-sub 2))
                (list (cons (ext-s (var 0) (cons (var 1) 4) empty-sub) 2)))
+  (test-equal? "=== sucess with a very large number"
+               ((=== (expt 2 65) (expt 2 65)) empty-state)
+               (list empty-state))
   ; call/freah tests
   (test-equal? "call/fresh 0"
                ((call/fresh (lambda (x) (=== x x))) empty-state)

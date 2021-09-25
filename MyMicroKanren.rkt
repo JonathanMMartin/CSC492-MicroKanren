@@ -14,9 +14,8 @@
 #|
 Define logic variables using vectors. They should be vectors of a single elemenmt. That element should be an int
 |#
-(define (var c) (vector c))
-(define (var? c) (vector? c))
-(define (var=? x y) (= (vector-ref x 0) (vector-ref y 0)))
+(struct var (index) #:prefab)
+(define (var=? x1 x2) (= (var-index x1) (var-index x2)))
 
 (define (unit s/c) (cons s/c mzero))
 (define mzero '())
